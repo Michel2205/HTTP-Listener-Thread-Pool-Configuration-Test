@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="${https.port.a}" doc:name="HTTP Listener Configuration">
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_Configuration" host="localhost" port="${https.port.a.b}"  doc:name="HTTP Request Configuration" responseTimeout="30000"/>
+	<flow name="httpa-testFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/httpa" doc:name="HTTP_A Listener"/>
+		<logger message="#['You are passing by the HTTP_A API']" level="INFO" doc:name="Logger"/>
+		<set-variable variableName="timeout" value="#[message.inboundProperties.'http.query.params'.Response_Timeout]" doc:name="Variable"/>
+		<logger message="#[message.id +  ' - ' + message.inboundProperties['http.request.path'] + ' - invoking implementation' ]" level="INFO" doc:name="Logger"/>
+		<http:request config-ref="HTTP_Request_Configuration" path="/httpb" method="POST" doc:name="HTTP Request from HTTP_A to HTTP_B">
+			<http:request-builder>
+				<http:query-param paramName="Timeout" value="#[flowVars.timeout]"/>
+			</http:request-builder>
+		</http:request>
+		<set-payload value="#['Process was successful...']" doc:name="Set Payload"/>
+		<catch-exception-strategy doc:name="Catch Exception Strategy">
+			<set-payload value="#[message.id +  ' - HTTP timed out']" doc:name="Set Payload"/>
+		</catch-exception-strategy>
+	</flow>
+</mule>
